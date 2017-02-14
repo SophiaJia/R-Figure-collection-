@@ -1,0 +1,119 @@
+require(cmprsk)
+require(reshape2)
+require(gridExtra)
+require(ggplot2)
+f.g=cuminc(D2$hem_free, D2$hem_censor   , D2$rtx)
+
+x=list(f.g$"0 1"$time,
+       f.g$"1 1"$time,
+       f.g$"2 1"$time,
+       f.g$"3 1"$time)
+
+y=list(f.g$"0 1"$est,
+       f.g$"1 1"$est,
+       f.g$"2 1"$est,
+       f.g$"3 1"$est)
+
+dx <- data.frame(kx = unlist(x), 
+                 grp = rep(letters[1:length(x)],times = sapply(x,length)))
+
+dy <- data.frame(ky = unlist(y), 
+                 grp = rep(letters[1:length(y)],times = sapply(y,length)))
+
+d<-cbind(dx, dy)
+
+.plot<-ggplot(data=d, aes(lty=grp, group=grp)) + geom_step(aes(x=kx, y=ky),direction="hv",size=1)+theme_bw()+
+  scale_linetype_discrete(name="  ",
+                          breaks=c("a", "b","c","d"),
+                          labels=c("None","Radioisotopes","EBRT","Other"))+
+  scale_x_discrete(breaks=c(seq(0,450,by=60)), labels=c(seq(0,37,by=5)),expand = c(0, 20))+
+  coord_cartesian(ylim = c(0,0.030))+
+  theme(axis.text = element_text(size=13),
+        axis.title = element_text(size=13,face="bold"),
+        plot.title = element_text(lineheight=.12, face="bold",size=15),
+        legend.text = element_text(size=13))+
+  labs(x = "
+       Time (Year)", y = "CIF
+       ",size = rel(2))+
+  ggtitle("Non-hematologic Malignancies
+          
+          
+          ")+
+  theme(panel.border=element_blank(), axis.line=element_line(),legend.key = element_blank()) 
+
+library(rtf)
+require(gtools)
+require(reshape)
+
+# number at risk
+
+D3<-D2[D2$hem_free>0,]
+Ta0<-table(D3$rtx)
+
+
+D3<-D2[D2$hem_free>60,]
+Ta1<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>120,]
+Ta2<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>180,]
+Ta3<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>240,]
+Ta4<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>300,]
+Ta5<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>360,]
+Ta6<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>420,]
+Ta7<-table(D3$rtx)
+
+D3<-D2[D2$hem_free>480,]
+Ta8<-table(D3$rtx)
+# number at risk dataset
+Drisk<-smartbind(Ta0,Ta1,Ta2,Ta3,Ta4,Ta5,Ta6,Ta7,Ta8)
+
+Drisk2<-c(Drisk[,1],Drisk[,2],Drisk[,3],Drisk[,4])
+Drisk2<-data.frame(Drisk2)
+Drisk2[,2]<-c(0,5,10,15,20,25,30,35,0,5,10,15,20,25,30,35,0,5,10,15,20,25,30,35,0,5,10,15,20,25,30,35)
+Drisk2[,3]<-rep(c("None","Radioisotopes","EBRT","Other"),each=8)
+
+Drisk2$V3=ordered(Drisk2$V3,levels=c("Other","EBRT","Radioisotopes","None"))
+#plot the table
+.risk <- ggplot(Drisk2, aes(x = V2, y = V3,label = Drisk2))+
+  geom_text(size = 4,hjust = 0,vjust=0.3)+ theme_bw()+
+  scale_x_discrete(breaks=NULL,expand = c(0, 4))+
+  theme(axis.text = element_text(size=13),
+        axis.title = element_text(size=13,face="bold",hjust = 0.615),
+        plot.title = element_text(lineheight=.12, face="bold",size=13),
+        legend.text = element_text(size=13))+
+  labs(x = "Patients at risk ", y = " ",size = rel(2))+
+  ggtitle("")+
+  theme(panel.border=element_blank(), axis.line=element_blank()) + 
+  theme(panel.grid.minor=element_blank(),
+          panel.grid.major=element_blank(), 
+          panel.background=element_blank(),
+          axis.ticks = element_blank())
+
+#breaks=NULL
+
+blank.pic <- ggplot(D2, aes(D2$hem_censor, D2$hem_free)) + geom_blank() + 
+  theme_bw() + theme(axis.text.x = element_blank(), axis.text.y = element_blank(), 
+                     axis.title.x = element_blank(), axis.title.y = element_blank(), 
+                     axis.ticks = element_blank(), panel.grid = element_blank(), 
+                     panel.border = element_blank())
+
+
+#### combine table with plot
+
+grid.arrange(.plot + theme(plot.margin = unit(c(0, 7, 0, 3.6), "lines"), legend.position = "top"), 
+             blank.pic + 
+               theme(plot.margin = unit(c(0, 0, 0, 0), "lines")), 
+             .risk + theme(plot.margin = unit(c(0, 7, 0, 0), "lines")), 
+             clip = FALSE, 
+             nrow = 3, ncol = 1, 
+             heights = unit(c(1, 0.03, 0.4), c("null", "null", "null")))

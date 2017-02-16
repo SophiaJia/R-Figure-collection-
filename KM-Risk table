@@ -1,0 +1,82 @@
+
+fig <- function(Data, time, event, ptext, plocation, subtitles){
+        s1 <- survfit(Surv(as.numeric(time), event) ~ BM, data = Data)
+        times <- seq(0, max(s1$time)+2, by = 12)
+        f.frame<-createSurvivalFrame(s1)  
+        p <- ggplot(data=f.frame, aes(col = strata, group = strata)) + geom_step(aes(x = time, y = surv), direction = "hv", size = 0.5) + 
+                theme_bw() +
+                scale_color_discrete(
+                                     name="  ",
+                                     breaks = c("BM=1", "BM=2", "BM=3"),
+                                     labels = c("BM = 1", "BM = 2-3", "BM > 3")) +
+                scale_x_continuous(breaks = c(seq(0, 150, by=12)), labels = c(seq(0, 150, by=12))) +
+                coord_cartesian(ylim = c(0, 1.05)) +
+                annotate("text", x = plocation, y = 0.05, label = ptext, size = 2.5) +
+                theme(legend.justification=c(1,0), legend.position=c(1.0,0.53),
+                      legend.key.width=unit(0.75,"cm"),legend.key.height = unit(0.35,"cm"),
+                      legend.key = element_blank(),
+                      legend.background = element_rect(fill = "transparent",colour = NA))+
+                theme(axis.text = element_text(size = 8),
+                      axis.title = element_text(size = 6,face = "bold"),
+                      plot.title = element_text(lineheight = .12, face = "bold", size = 7.5),
+                      legend.text = element_text(size = 6),
+                      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                      panel.border = element_blank(), axis.line = element_line()) +
+                labs(x = "Time (Months)", y = "%Survival 
+               ",size = rel(2)) +
+                theme(plot.margin = unit(c(0.5, 0.5, 0, 0.8), "lines")) #+
+                #ggtitle(titletext)+
+                #theme(plot.title = element_text(size=18, face="bold", vjust=1, hjust = 0.5,lineheight=0.6)
+        
+        risk.data <- data.frame(
+                strata = factor(summary(s1,times = times,extend = TRUE)$strata),
+                time = summary(s1,times = times,extend = TRUE)$time,
+                n.risk = summary(s1,times = times,extend = TRUE)$n.risk
+        )
+        
+        risk.data$strata <- factor(risk.data$strata, levels=rev(levels(risk.data$strata)))
+        
+        data.table <- ggplot(risk.data,aes(x = time, y = strata, label = format(n.risk, nsmall = 0))) +
+                #, color = strata)) +
+                geom_text(size = 2.5,vjust=0) + theme_bw() +
+                scale_y_discrete(breaks = as.character(levels(risk.data$strata)),
+                                 labels = c("BM = 1    ", "BM = 2-3 ", "BM > 3    ")) +
+                scale_x_continuous( breaks = c(seq(0, 150, by=12)), labels = c(seq(0, 150, by=12))) +
+                theme(axis.text = element_text(size = 6,face = "bold"), 
+                      axis.title.x = element_text(size = 6,face = "bold"),
+                      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                      panel.border= element_blank(),
+                      aspect.ratio=1/8.5)+
+                labs(x = "Time (Months) ", y = " ")+
+                theme(plot.margin = unit(c(0.5, 1, 0.1, 0.4), "lines")) # ADJUST POSITION OF TABLE FOR AT RISK
+        
+        #######################
+        # Plotting the graphs #
+        #######################
+        title.grob <- textGrob(
+                label = subtitles,
+                x = unit(0, "lines"), 
+                y = unit(0, "lines"),
+                hjust = 0, vjust = 0,
+                gp = gpar(fontsize = 7, fontface = 'bold'))
+        
+        arrangeGrob(title.grob,  p, data.table, clip = FALSE, nrow = 3,
+                    ncol = 1, heights = c(0.05,  0.6,  0.2))
+       
+}
+
+uni_os_m  <- fig(M1, M1$surv, M1$scensor,'p = 0.51', 8,
+                 "C                           Overall Survival - ALK/EGFR Mutation (n = 91)")
+grid.arrange(title.grob)
+
+uni_os_w  <- fig(M2, M2$surv, M2$scensor,'p = 0.003',8,
+                 "D                                 Overall Survival - Wild Type (n = 257)")
+uni_pfs_m <- fig(M1, M1$pfs,  M1$rcensor,'p = 0.78' ,4,
+                 "A                                   PFS - ALK/EGFR Mutation (n = 91)")
+M2 <- M2[M2$pfs >0,]
+uni_pfs_w <- fig(M2, M2$pfs,  M2$rcensor,'p = 0.014',8,
+                 "B                                              PFS - Wild Type (n = 257)")
+
+blank<-rectGrob(gp=gpar(col="white")) # make a white spacer grob
+plot1 <- arrangeGrob(uni_pfs_m, blank, uni_pfs_w,  uni_os_m , blank,uni_os_w , heights=c(0.5, 0.5), widths = c(0.485, 0.03, 0.485))
+ggsave("F1.Univariable.jpeg",plot1, width = 17, height = 15, units = "cm", dpi = 600)

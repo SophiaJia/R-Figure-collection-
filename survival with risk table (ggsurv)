@@ -1,0 +1,11 @@
+require("GGally")
+ggsurv(s1, surv.col = "black", cens.col = "black", size.est = 1.2) + theme_bw() +
+  coord_cartesian(ylim = c(0, 1.05)) +
+  scale_x_continuous(breaks = c(seq(0, 260, by=60)), labels = c(seq(0, 260, by=60))) + 
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 16,face = "bold"),
+        plot.title = element_text(lineheight = .12, face = "bold", size = 15),
+        legend.text = element_text(size = 15)) +
+  labs(x = "
+       Time in Months from GK", y = "% Tumor Control 
+       ",size = rel(2))

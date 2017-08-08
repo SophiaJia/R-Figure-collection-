@@ -1,0 +1,62 @@
+
+s1<- survfit(Surv(as.numeric(D$pfs), D$rcensor) ~ 1 , data = D)
+f.frame<-createSurvivalFrame(s1)  
+p <- ggplot(data=f.frame) + geom_step(aes(x = time, y = surv), direction = "hv", size = 1.2) + 
+  geom_point(data = subset(f.frame, n.censor == 1), aes(x = time, y = surv), shape = "|", cex = 7) + 
+  theme_bw() + 
+  scale_x_continuous(breaks = c(seq(0, 220, by=24)), labels = c(seq(0, 220, by=24))) +
+  coord_cartesian(ylim = c(0, 1.05))  +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16,face = "bold"),
+        plot.title = element_text(lineheight = .12, face = "bold", size = 7.5),
+        legend.text = element_text(size = 6),
+         panel.grid.minor = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(x = "Time (Months)", y = "%Tumor Control 
+       ") +
+  theme(plot.margin = unit(c(0, 0.5, -2, 0.8), "lines")) #+
+#ggtitle(titletext)+
+#theme(plot.title = element_text(size=18, face="bold", vjust=1, hjust = 0.5,lineheight=0.6)
+
+
+  risk.data <- data.frame(
+    strata = '
+
+
+    N at Risk
+
+    Time',
+    time = summary(s1,times = c(seq(0, 220, by=24)),extend = TRUE)$time,
+    n.risk = summary(s1,times = c(seq(0, 220, by=24)),extend = TRUE)$n.risk
+  )
+  
+  
+  risk.data$strata <- factor(risk.data$strata, levels=rev(levels(risk.data$strata)))
+  
+  data.table <- ggplot(risk.data,aes(x = time, y = strata, label = format(n.risk, nsmall = 0))) +
+    #, color = strata)) +
+    geom_text(size = 5 ,vjust=1, hjust = 0.7) + theme_bw() +
+    scale_x_continuous( breaks = c(seq(0, 220, by=24)), labels = c(seq(0, 220, by=24))) +
+    theme(axis.text = element_text(size = 14), 
+          axis.title.x = element_text(size = 12),
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          panel.border= element_blank(),
+          axis.ticks = element_blank(),
+          aspect.ratio=1/7
+          )+
+    labs(x = "      ", y = " ")+
+    theme(plot.margin = unit(c(0, 0.8, 0, -0.6), "lines")) # ADJUST POSITION OF TABLE FOR AT RISK
+  
+  #######################
+  # Plotting the graphs #
+  #######################
+  title.grob <- textGrob(
+    label = '',
+    x = unit(0, "lines"), 
+    y = unit(0, "lines"),
+    hjust = 0, vjust = -0.5,
+    gp = gpar(fontsize = 7, fontface = 'bold'))
+  
+ t<- arrangeGrob( title.grob, p, data.table, clip = FALSE, nrow = 3,
+              ncol = 1, heights = c(0.1,  0.6,  0.4))
+ ggsave("figure.tiff",t, width = 17, height = 15, units = "cm", dpi = 600) 
